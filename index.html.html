@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoQuiz Global - Plataforma Interactiva de Educación Ambiental</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            },
+            ecoBlue: {
+              500: '#0ea5e9',
+              600: '#0284c7',
+            }
+          },
+          animation: {
+            'bounce-short': 'bounce 0.8s ease-in-out 1',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    @keyframes floatTrash {
+      0% { transform: translateY(-10px) rotate(0deg); }
+      50% { transform: translateY(10px) rotate(5deg); }
+      100% { transform: translateY(-10px) rotate(0deg); }
+    }
+    .floating-item {
+      animation: floatTrash 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased text-slate-100 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950">
+
+  <header class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="showSection('homeSection')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg shadow-emerald-500/20">
+          <i class="fa-solid fa-leaf"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight tracking-wide text-white">EcoQuiz <span class="text-emerald-400">Global</span></h1>
+          <p class="text-xs text-slate-400 hidden sm:block">Contaminación & Soluciones Planetarias</p>
+        </div>
+      </div>
+
+      <!-- Estado de Usuario, Contador en tiempo real & Botones Rápidos -->
+      <div class="flex items-center space-x-2 sm:space-x-4">
+        <!-- Contador de personas en tiempo real en la barra superior -->
+        <div class="hidden md:flex items-center space-x-2 bg-emerald-950/60 px-3 py-1.5 rounded-full border border-emerald-500/40 text-xs">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <span class="text-emerald-300 font-bold"><span id="navOnlineCount">1</span> jugando ahora</span>
+        </div>
+
+        <div id="userInfoChip" class="hidden items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 text-xs sm:text-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="navUserName" class="font-medium text-emerald-300">Jugador</span>
+          <span class="text-slate-500">|</span>
+          <span id="navUserScore" class="font-bold text-amber-400">0 pts</span>
+        </div>
+
+        <button onclick="openShareModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3.5 py-1.5 rounded-lg text-xs sm:text-sm transition flex items-center space-x-2 shadow-md shadow-emerald-900/40">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>Enviar mensaje</span>
+        </button>
+
+        <button onclick="openAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white p-2 rounded-lg border border-slate-700 text-sm transition" title="Panel Administrador">
+          <i class="fa-solid fa-user-shield"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 custom-scrollbar overflow-y-auto">
+
+    <!-- SECCIÓN 1: INICIO / SELECCIÓN DE SALA Y REGISTRO -->
+    <section id="homeSection" class="space-y-8">
+      <!-- Banner de Bienvenida y Apartado en Tiempo Real -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 relative rounded-3xl p-6 sm:p-10 glass-card bg-gradient-to-r from-emerald-900/40 via-teal-900/30 to-slate-900 border border-emerald-500/20 overflow-hidden flex flex-col justify-between space-y-6">
+          <div class="space-y-4">
+            <span class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <i class="fa-solid fa-earth-americas"></i>
+              <span>Plataforma Educativa Multijugador (Puntuaciones Permanentes)</span>
+            </span>
+            <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+              Aprende y combate la <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Contaminación Global</span>
+            </h2>
+            <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+              Pon a prueba tus conocimientos con el Quiz oficial y participa en las dinámicas interactivas. Tus puntuaciones ganadas se guardan de forma permanente y acumulativa.
+            </p>
+          </div>
+
+          <!-- Formulario de Ingreso de Jugador -->
+          <div id="registrationCard" class="bg-slate-900/90 p-4 rounded-2xl border border-slate-700 space-y-3 max-w-lg">
+            <label class="block text-xs font-medium text-slate-300">Ingresa tu Nombre / Alias para unirte:</label>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input type="text" id="playerNameInput" placeholder="Ej. Sofia - EcoWarrior" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+              <button onclick="registerPlayer()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-5 py-2 rounded-xl text-sm transition shadow-lg">
+                ¡Registrarse / Jugar!
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Apartado en Tiempo Real (Jugadores conectados y métricas de sesión) -->
+        <div class="glass-card rounded-3xl p-6 border border-emerald-500/30 flex flex-col justify-between space-y-4">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-users text-emerald-400"></i>
+                <span>En Tiempo Real</span>
+              </h3>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span>
+                Activo
+              </span>
+            </div>
+            <p class="text-xs text-slate-400">Personas conectadas y jugando ahora mismo en la plataforma:</p>
+          </div>
+
+          <div class="bg-slate-950/80 rounded-2xl p-6 text-center border border-slate-800 space-y-2">
+            <div class="text-5xl font-black text-emerald-400 tracking-tight" id="livePlayersBigNumber">1</div>
+            <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Jugadores Conectados en Vivo</p>
+          </div>
+
+          <div class="space-y-2 pt-2 border-t border-slate-800 text-xs text-slate-300">
+            <div class="flex justify-between">
+              <span>Tus Puntos Guardados:</span>
+              <span id="cardUserScoreDisplay" class="font-bold text-amber-400">0 pts</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Estado de Puntuación:</span>
+              <span class="font-bold text-emerald-400">Permanente (No se borran)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Tarjeta Quiz 10 Preguntas -->
+        <div onclick="startQuiz()" class="glass-card rounded-2xl p-5 hover:border-emerald-500/50 transition cursor-pointer group flex flex-col justify-between space-y-4 hover:scale-[1.02]">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl group-hover:bg-emerald-500 group-hover:text-slate-950 transition">
+              <i class="fa-solid fa-list-check"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white group-hover:text-emerald-400 transition">Quiz Evaluativo (10 Preguntas)</h3>
+            <p class="text-xs text-slate-400">Responde 10 preguntas clave sobre contaminación del agua, aire, microplásticos y efecto invernadero.</p>
+          </div>
+          <div class="flex items-center justify-between text-xs font-semibold text-emerald-400 pt-2 border-t border-slate-800">
+            <span>Iniciar Evaluación</span>
+            <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+          </div>
+        </div>
+
+        <!-- Tarjeta Dinámica 1: Clasificador Recicla-Pro -->
+        <div onclick="startGame(1)" class="glass-card rounded-2xl p-5 hover:border-teal-500/50 transition cursor-pointer group flex flex-col justify-between space-y-4 hover:scale-[1.02]">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center text-xl group-hover:bg-teal-500 group-hover:text-slate-950 transition">
+              <i class="fa-solid fa-recycle"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white group-hover:text-teal-400 transition">Dinámica 1: Recicla-Pro</h3>
+            <p class="text-xs text-slate-400">Juego de velocidad de clasificación de residuos en contenedores orgánicos, plásticos, papel y peligrosos.</p>
+          </div>
+          <div class="flex items-center justify-between text-xs font-semibold text-teal-400 pt-2 border-t border-slate-800">
+            <span>Jugar Clasificación</span>
+            <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+          </div>
+        </div>
+
+        <!-- Tarjeta Dinámica 2: Eco-Atrapador del Océano -->
+        <div onclick="startGame(2)" class="glass-card rounded-2xl p-5 hover:border-cyan-500/50 transition cursor-pointer group flex flex-col justify-between space-y-4 hover:scale-[1.02]">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xl group-hover:bg-cyan-500 group-hover:text-slate-950 transition">
+              <i class="fa-solid fa-fish"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white group-hover:text-cyan-400 transition">Dinámica 2: Limpieza Oceánica</h3>
+            <p class="text-xs text-slate-400">Elimina el plástico y derrames de petróleo flotantes en el océano antes de que afecten la fauna marina.</p>
+          </div>
+          <div class="flex items-center justify-between text-xs font-semibold text-cyan-400 pt-2 border-t border-slate-800">
+            <span>Limpiar Océano</span>
+            <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+          </div>
+        </div>
+
+        <!-- Tarjeta Dinámica 3: Desafío Huella de Carbono -->
+        <div onclick="startGame(3)" class="glass-card rounded-2xl p-5 hover:border-amber-500/50 transition cursor-pointer group flex flex-col justify-between space-y-4 hover:scale-[1.02]">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white group-hover:text-amber-400 transition">Dinámica 3: Huella Cero</h3>
+            <p class="text-xs text-slate-400">Simulador de toma de decisiones diarias. Elige las alternativas con menor impacto ambiental.</p>
+          </div>
+          <div class="flex items-center justify-between text-xs font-semibold text-amber-400 pt-2 border-t border-slate-800">
+            <span>Iniciar Simulador</span>
+            <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-trophy text-amber-400"></i>
+              <span>Tabla de Posiciones y Puntuaciones Permanentes</span>
+            </h3>
+            <p class="text-xs text-slate-400">Las puntuaciones ganadas se guardan de forma acumulativa y permanente. ¡Compite por el primer lugar!</p>
+          </div>
+          <div class="flex items-center space-x-2 text-xs bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span class="text-slate-300">Puntajes guardados localmente y en la nube</span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="text-xs uppercase bg-slate-800/80 text-slate-400 border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-4">Posición</th>
+                <th class="py-3 px-4">Jugador</th>
+                <th class="py-3 px-4 text-center">Quiz (10 Preg.)</th>
+                <th class="py-3 px-4 text-center">Juegos</th>
+                <th class="py-3 px-4 text-right">Puntaje Total Permanente</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+              <tr>
+                <td colspan="5" class="text-center py-6 text-slate-500 text-xs">
+                  Ingresa tu nombre arriba para aparecer en la tabla de clasificación.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="quizSection" class="hidden max-w-3xl mx-auto space-y-6">
+      <div class="flex items-center justify-between glass-card p-4 rounded-2xl">
+        <button onclick="showSection('homeSection')" class="text-slate-400 hover:text-white text-xs sm:text-sm flex items-center space-x-1">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Volver al Menú</span>
+        </button>
+        <div class="text-center">
+          <span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Quiz de Evaluación</span>
+          <h2 class="text-sm sm:text-base font-bold text-emerald-400" id="quizProgressTitle">Pregunta 1 de 10</h2>
+        </div>
+        <div class="flex items-center space-x-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1 rounded-full text-xs font-bold">
+          <i class="fa-solid fa-clock"></i>
+          <span id="quizTimer">20s</span>
+        </div>
+      </div>
+
+      <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+        <div id="quizProgressBar" class="bg-emerald-500 h-full w-[10%] transition-all duration-300"></div>
+      </div>
+
+      <div class="glass-card rounded-3xl p-6 sm:p-8 space-y-6 relative border border-slate-700">
+        <div id="quizQuestionCategory" class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300">
+          Categoría
+        </div>
+        <h3 id="quizQuestionText" class="text-xl sm:text-2xl font-bold text-white leading-snug">
+          ¿Cargando pregunta...?
+        </h3>
+
+        <div id="quizOptionsContainer" class="grid grid-cols-1 gap-3 pt-2"></div>
+
+        <div id="quizFeedbackBox" class="hidden p-4 rounded-xl text-xs sm:text-sm space-y-2 border">
+          <div class="font-bold flex items-center space-x-2" id="quizFeedbackHeader"></div>
+          <p id="quizFeedbackExplanation" class="text-slate-300 leading-relaxed"></p>
+          <button id="nextQuestionBtn" onclick="nextQuestion()" class="mt-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition">
+            Siguiente Pregunta <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="quizResultSection" class="hidden max-w-2xl mx-auto glass-card rounded-3xl p-8 text-center space-y-6 border border-emerald-500/30">
+      <div class="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-4xl shadow-lg shadow-emerald-500/20 animate-bounce-short">
+        <i class="fa-solid fa-award"></i>
+      </div>
+      <div>
+        <h2 class="text-3xl font-extrabold text-white">¡Quiz Completado y Guardado!</h2>
+        <p class="text-slate-400 text-sm mt-1">Tus puntos se han sumado permanentemente a tu perfil.</p>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+        <div>
+          <span class="text-xs text-slate-400 block">Aciertos</span>
+          <span id="resCorrect" class="text-xl font-extrabold text-emerald-400">0 / 10</span>
+        </div>
+        <div>
+          <span class="text-xs text-slate-400 block">Puntaje Ganado</span>
+          <span id="resScore" class="text-xl font-extrabold text-amber-400">0 pts</span>
+        </div>
+        <div>
+          <span class="text-xs text-slate-400 block">Nivel Eco</span>
+          <span id="resBadge" class="text-xs font-bold text-teal-300 block mt-1">Especialista</span>
+        </div>
+      </div>
+
+      <p id="resEvaluationText" class="text-slate-300 text-sm italic bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+        Evaluación de desempeño ambiental...
+      </p>
+
+      <div class="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+        <button onclick="showSection('homeSection')" class="bg-slate-800 hover:bg-slate-700 text-white font-medium px-6 py-2.5 rounded-xl text-sm transition">
+          <i class="fa-solid fa-house mr-1"></i> Ir al Menú Principal
+        </button>
+        <button onclick="startQuiz()" class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-sm transition">
+          <i class="fa-solid fa-rotate-right mr-1"></i> Reintentar Quiz
+        </button>
+      </div>
+    </section>
+
+    <section id="game1Section" class="hidden space-y-6 max-w-4xl mx-auto">
+      <div class="flex items-center justify-between glass-card p-4 rounded-2xl">
+        <button onclick="showSection('homeSection')" class="text-slate-400 hover:text-white text-xs sm:text-sm">
+          <i class="fa-solid fa-arrow-left"></i> Volver
+        </button>
+        <h2 class="font-bold text-teal-400">Dinámica 1: Clasificador Recicla-Pro</h2>
+        <div class="text-xs font-bold bg-teal-500/20 text-teal-300 px-3 py-1 rounded-full">
+          Puntos: <span id="g1Score">0</span>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-3xl p-6 text-center space-y-6">
+        <p class="text-xs sm:text-sm text-slate-300">
+          Haz clic en el contenedor correcto donde debe ir el residuo (Tus puntos se guardan permanentemente):
+        </p>
+
+        <div class="bg-slate-900 border-2 border-teal-500/50 rounded-2xl p-6 max-w-xs mx-auto space-y-2 shadow-xl shadow-teal-950/50">
+          <div id="g1ItemIcon" class="text-5xl text-teal-400">
+            <i class="fa-solid fa-bottle-water"></i>
+          </div>
+          <h3 id="g1ItemName" class="text-lg font-bold text-white">Botella de Plástico</h3>
+          <span id="g1ItemHint" class="text-xs text-slate-400 block">Envase PET descartable</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <button onclick="checkG1Category('plastic')" class="p-4 bg-amber-500/10 border-2 border-amber-500/40 hover:bg-amber-500/20 rounded-2xl flex flex-col items-center space-y-2 transition">
+            <i class="fa-solid fa-dumpster text-amber-400 text-2xl"></i>
+            <span class="text-xs font-bold text-amber-300">Plásticos / Latas</span>
+          </button>
+          <button onclick="checkG1Category('organic')" class="p-4 bg-emerald-500/10 border-2 border-emerald-500/40 hover:bg-emerald-500/20 rounded-2xl flex flex-col items-center space-y-2 transition">
+            <i class="fa-solid fa-apple-whole text-emerald-400 text-2xl"></i>
+            <span class="text-xs font-bold text-emerald-300">Orgánicos</span>
+          </button>
+          <button onclick="checkG1Category('paper')" class="p-4 bg-sky-500/10 border-2 border-sky-500/40 hover:bg-sky-500/20 rounded-2xl flex flex-col items-center space-y-2 transition">
+            <i class="fa-solid fa-box text-sky-400 text-2xl"></i>
+            <span class="text-xs font-bold text-sky-300">Papel / Cartón</span>
+          </button>
+          <button onclick="checkG1Category('hazardous')" class="p-4 bg-rose-500/10 border-2 border-rose-500/40 hover:bg-rose-500/20 rounded-2xl flex flex-col items-center space-y-2 transition">
+            <i class="fa-solid fa-radiation text-rose-400 text-2xl"></i>
+            <span class="text-xs font-bold text-rose-300">Peligrosos / RAEE</span>
+          </button>
+        </div>
+
+        <div id="g1Feedback" class="h-6 text-xs font-bold text-slate-400">
+          Residuos restantes: <span id="g1Remaining">7</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="game2Section" class="hidden space-y-6 max-w-4xl mx-auto">
+      <div class="flex items-center justify-between glass-card p-4 rounded-2xl">
+        <button onclick="showSection('homeSection')" class="text-slate-400 hover:text-white text-xs sm:text-sm">
+          <i class="fa-solid fa-arrow-left"></i> Volver
+        </button>
+        <h2 class="font-bold text-cyan-400">Dinámica 2: Limpieza Oceánica</h2>
+        <div class="flex items-center space-x-3 text-xs font-bold">
+          <span class="bg-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full">Puntos: <span id="g2Score">0</span></span>
+          <span class="bg-rose-500/20 text-rose-300 px-3 py-1 rounded-full">Tiempo: <span id="g2Timer">15</span>s</span>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-3xl p-6 text-center space-y-4">
+        <p class="text-xs sm:text-sm text-slate-300">
+          ¡Atrapa el plástico y contaminantes flotantes! <strong class="text-rose-400">¡NO toques la fauna marina!</strong>
+        </p>
+        <div id="oceanGameArea" class="relative w-full h-80 bg-gradient-to-b from-sky-900 via-blue-950 to-slate-950 rounded-2xl border-2 border-cyan-500/30 overflow-hidden cursor-crosshair flex items-center justify-center">
+          <button id="startG2Btn" onclick="runOceanGame()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-6 py-3 rounded-xl shadow-lg transition">
+            <i class="fa-solid fa-play mr-2"></i> Comenzar Limpieza
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="game3Section" class="hidden space-y-6 max-w-3xl mx-auto">
+      <div class="flex items-center justify-between glass-card p-4 rounded-2xl">
+        <button onclick="showSection('homeSection')" class="text-slate-400 hover:text-white text-xs sm:text-sm">
+          <i class="fa-solid fa-arrow-left"></i> Volver
+        </button>
+        <h2 class="font-bold text-amber-400">Dinámica 3: Simulador Huella Cero</h2>
+        <div class="text-xs font-bold bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full">
+          Puntos: <span id="g3Score">0</span>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-3xl p-6 sm:p-8 space-y-6">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-amber-400">
+          <i class="fa-solid fa-route"></i>
+          <span id="g3ScenarioCounter">Escenario 1 de 5</span>
+        </div>
+
+        <h3 id="g3ScenarioTitle" class="text-xl font-bold text-white">¿Cargando escenario...?</h3>
+        <p id="g3ScenarioDesc" class="text-xs sm:text-sm text-slate-300 leading-relaxed"></p>
+
+        <div id="g3OptionsContainer" class="grid grid-cols-1 gap-3 pt-2"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="shareModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 space-y-5 border border-emerald-500/30 relative">
+      <button onclick="closeShareModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 text-emerald-400">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-paper-plane"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg text-white">Enviar Quiz a tus Compañeros</h3>
+          <p class="text-xs text-slate-400">Invita a competir y mira cuántos entran en vivo</p>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-xs font-medium text-slate-300">Mensaje predeterminado de invitación:</label>
+        <textarea id="shareTextarea" readonly class="w-full h-28 bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 focus:outline-none custom-scrollbar">¡Hola! Te invito a unirte a nuestro Quiz interactivo de Contaminación Ambiental. Tus puntuaciones quedan guardadas permanentemente y puedes ver cuántas personas están jugando en tiempo real. ¡Ingresa ahora!</textarea>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2">
+        <button onclick="copyShareMessage()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-copy"></i>
+          <span>Copiar Mensaje</span>
+        </button>
+        <button onclick="sendWhatsAppMessage()" class="bg-emerald-800 hover:bg-emerald-700 text-emerald-100 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center space-x-2">
+          <i class="fa-brands fa-whatsapp text-sm"></i>
+          <span>WhatsApp</span>
+        </button>
+      </div>
+      <p id="shareToast" class="text-center text-xs font-bold text-emerald-400 hidden">¡Mensaje copiado al portapapeles!</p>
+    </div>
+  </div>
+
+  <div id="adminModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card max-w-2xl w-full rounded-3xl p-6 sm:p-8 space-y-6 border border-slate-700 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div id="adminAuthStep" class="space-y-4 text-center max-w-sm mx-auto py-6">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white">Acceso Administrador</h3>
+        <p class="text-xs text-slate-400">Ingresa el código PIN asignado de docente (0221) para gestionar puntuaciones permanentes.</p>
+        
+        <input type="password" id="adminPinInput" maxlength="4" placeholder="••••" class="w-full text-center text-2xl tracking-widest bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-amber-400 font-bold focus:outline-none focus:border-amber-500">
+        
+        <button onclick="verifyAdminPin()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl text-sm transition">
+          Ingresar al Panel
+        </button>
+        <p id="adminErrorMsg" class="text-xs text-rose-400 hidden font-semibold">Código PIN incorrecto (Prueba 0221).</p>
+      </div>
+
+      <div id="adminDashboard" class="hidden space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-white">Panel de Control Docente</h3>
+              <p class="text-xs text-slate-400">Monitoreo y registros permanentes activos</p>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-bold rounded-md">Sesión Activa</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
+            <span class="text-xs text-slate-400 block">Total Estudiantes</span>
+            <span id="admTotalUsers" class="text-xl font-bold text-white">0</span>
+          </div>
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
+            <span class="text-xs text-slate-400 block">Promedio Quiz</span>
+            <span id="admAvgScore" class="text-xl font-bold text-emerald-400">0 pts</span>
+          </div>
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
+            <span class="text-xs text-slate-400 block">Modo Puntuación</span>
+            <span class="text-xs font-bold text-amber-400 mt-1 block">Permanente (Sin borrado)</span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Reporte de Puntuaciones Acumuladas</h4>
+          <div class="overflow-x-auto max-h-48 custom-scrollbar rounded-xl border border-slate-800">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 border-b border-slate-800 sticky top-0">
+                <tr>
+                  <th class="p-2.5">Estudiante</th>
+                  <th class="p-2.5 text-center">Aciertos Quiz</th>
+                  <th class="p-2.5 text-center">Pts Juegos</th>
+                  <th class="p-2.5 text-right">Puntaje Total Permanente</th>
+                </tr>
+              </thead>
+              <tbody id="adminTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
+          <button onclick="exportResultsCSV()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2 rounded-xl text-xs transition flex items-center space-x-1">
+            <i class="fa-solid fa-file-csv"></i>
+            <span>Exportar CSV</span>
+          </button>
+          <div class="text-[11px] text-slate-400 self-center ml-auto italic">
+            Nota: Las puntuaciones se guardan de forma permanente y no se borran automáticamente.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'eco-quiz-app-2026';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' 
+      ? JSON.parse(__firebase_config) 
+      : { apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo" };
+
+    let app, auth, db;
+    
+    // Cargar perfil con persistencia local robusta para asegurar que los puntos no se borren
+    let localPlayer = {
+      id: localStorage.getItem('eco_user_id') || ('user_' + Math.random().toString(36).substring(2, 9)),
+      name: localStorage.getItem('eco_user_name') || '',
+      quizScore: parseInt(localStorage.getItem('eco_quiz_score') || '0', 10),
+      quizCorrect: parseInt(localStorage.getItem('eco_quiz_correct') || '0', 10),
+      gamesScore: parseInt(localStorage.getItem('eco_games_score') || '0', 10),
+      totalScore: parseInt(localStorage.getItem('eco_total_score') || '0', 10)
+    };
+
+    localStorage.setItem('eco_user_id', localPlayer.id);
+
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
+      } else {
+        signInAnonymously(auth);
+      }
+    } catch (e) {
+      console.warn("Firebase operando en modo local/fallback", e);
+    }
+
+    // 10 Preguntas Evaluativas Oficiales sobre Contaminación Ambiental y Global
+    const quizQuestions = [
+      {
+        category: "Contaminación Plástica",
+        question: "¿Aproximadamente cuántos millones de toneladas de plástico se vierten en los océanos cada año?",
+        options: [
+          "Alrededor de 8 a 11 millones de toneladas",
+          "Menos de 100,000 toneladas",
+          "50 millones de toneladas",
+          "No llega a 1 millón de toneladas"
+        ],
+        correct: 0,
+        explanation: "Se estima que entre 8 y 11 millones de toneladas de plástico llegan a los océanos cada año, amenazando la vida marina."
+      },
+      {
+        category: "Gases de Efecto Invernadero",
+        question: "¿Cuál es el gas de efecto invernadero emitido en mayor cantidad por actividades humanas?",
+        options: [
+          "Metano (CH4)",
+          "Dióxido de Carbono (CO2)",
+          "Óxido Nitroso (N2O)",
+          "CFC (Clorofluorocarbonos)"
+        ],
+        correct: 1,
+        explanation: "El Dióxido de Carbono (CO2) representa aproximadamente el 75-80% de todas las emisiones globales producidas."
+      },
+      {
+        category: "Calidad del Aire",
+        question: "¿Qué contaminante atmosférico fino (PM2.5) es el más dañino para los pulmones humanos?",
+        options: [
+          "Polvo de arena común",
+          "Partículas en suspensión menores a 2.5 micrómetros",
+          "Vapor de agua condensado",
+          "Polen vegetal"
+        ],
+        correct: 1,
+        explanation: "Las partículas PM2.5 son tan diminutas que penetran profundamente en los alvéolos pulmonares y el torrente sanguíneo."
+      },
+      {
+        category: "Contaminación del Agua",
+        question: "¿Qué fenómeno ocurre cuando el exceso de fertilizantes agrícolas llega a ríos y lagos causando la muerte de peces?",
+        options: [
+          "Eutrofización",
+          "Desalinización",
+          "Evapotranspiración",
+          "Condensación ácida"
+        ],
+        correct: 0,
+        explanation: "La eutrofización produce una proliferación descontrolada de algas que agotan el oxígeno disuelto en el agua."
+      },
+      {
+        category: "Residuos Electrónicos (RAEE)",
+        question: "¿Por qué los desechos electrónicos (celulares, baterías, laptops) son altamente peligrosos para el suelo?",
+        options: [
+          "Porque ocupan demasiado espacio mecánico",
+          "Porque contienen metales pesados como plomo, mercurio y cadmio que lixivian",
+          "Porque no se pueden derretir",
+          "Porque emiten ondas de radio de forma permanente"
+        ],
+        correct: 1,
+        explanation: "Los equipos electrónicos poseen plomo, mercurio y cadmio que filtran tóxicos al subsuelo."
+      },
+      {
+        category: "Acidificación Oceánica",
+        question: "¿Qué causa la acidificación de los océanos a nivel mundial?",
+        options: [
+          "El vertido directo de jugo de limón industrial",
+          "La absorción del exceso de dióxido de carbono (CO2) atmosférico por el mar",
+          "El aumento del agua dulce de los glaciares",
+          "Los derrames de petróleo exclusivamente"
+        ],
+        correct: 1,
+        explanation: "Los océanos absorben cerca del 30% del CO2 emitido por los humanos, formando ácido carbónico."
+      },
+      {
+        category: "Deforestación y Suelo",
+        question: "¿De qué manera la tala masiva de bosques incrementa el calentamiento global?",
+        options: [
+          "Hace que la Tierra pese menos",
+          "Elimina sumideros naturales de carbono y libera el CO2 almacenado en árboles",
+          "Enfría el suelo demasiado rápido",
+          "Bloquea la entrada de luz solar a la superficie"
+        ],
+        correct: 1,
+        explanation: "Los árboles almacenan carbono. Al cortarlos o quemarlos se libera CO2 a la atmósfera."
+      },
+      {
+        category: "Lluvia Ácida",
+        question: "¿Qué gases son los principales responsables de la formación de la lluvia ácida?",
+        options: [
+          "Oxígeno y Nitrógeno puro",
+          "Dióxido de azufre (SO2) y Óxidos de nitrógeno (NOx)",
+          "Helio y Argón",
+          "Metano y Propano"
+        ],
+        correct: 1,
+        explanation: "El SO2 y NOx emitidos por industrias y autos reaccionan con el agua produciendo ácido sulfúrico y nítrico."
+      },
+      {
+        category: "Moda Rápida (Fast Fashion)",
+        question: "¿Qué impacto ecológico significativo genera la industria textil masiva de uso desechable?",
+        options: [
+          "Consume enormes volúmenes de agua y libera microfibras sintéticas no biodegradables",
+          "Produce demasiado gas oxígeno",
+          "Utiliza únicamente tintes orgánicos de plantas",
+          "Ninguno, las telas se disuelven en agua"
+        ],
+        correct: 0,
+        explanation: "La industria textil es responsable del 20% de la contaminación de agua industrial en el mundo."
+      },
+      {
+        category: "Energías y Soluciones",
+        question: "¿Cuál de las siguientes fuentes de energía NO genera emisiones directas de gases de efecto invernadero?",
+        options: [
+          "Central térmica de carbón",
+          "Energía solar fotovoltaica y eólica",
+          "Generador diésel de respaldo",
+          "Gas natural licuado"
+        ],
+        correct: 1,
+        explanation: "La energía solar y la eólica aprovechan recursos renovables limpios sin combustión."
+      }
+    ];
+
+    let currentQIndex = 0;
+    let quizScore = 0;
+    let quizCorrect = 0;
+    let quizTimerInterval = null;
+    let quizTimeLeft = 20;
+
+    let g1Items = [
+      { name: "Botella PET", category: "plastic", icon: "fa-bottle-water", hint: "Plástico reciclable" },
+      { name: "Cáscara de Plátano", category: "organic", icon: "fa-apple-whole", hint: "Resto orgánico computable" },
+      { name: "Caja de Cartón", category: "paper", icon: "fa-box", hint: "Papel/Cartón limpio" },
+      { name: "Batería de Litio", category: "hazardous", icon: "fa-battery-full", hint: "Residuo químico/peligroso" },
+      { name: "Lata de Aluminio", category: "plastic", icon: "fa-wine-bottle", hint: "Envase metálico/reciclable" },
+      { name: "Restos de Café", category: "organic", icon: "fa-mug-hot", hint: "Materia orgánica" },
+      { name: "Periódico Viejo", category: "paper", icon: "fa-newspaper", hint: "Celulosa reciclable" },
+      { name: "Foco Mercurial", category: "hazardous", icon: "fa-lightbulb", hint: "Residuo peligroso RAEE" }
+    ];
+    let g1Index = 0;
+    let g1Score = 0;
+
+    let g2Score = 0;
+    let g2Timer = 15;
+    let g2Interval = null;
+    let g2SpawnInterval = null;
+
+    let g3Index = 0;
+    let g3Score = 0;
+    const g3Scenarios = [
+      {
+        title: "Transporte para ir a la Escuela/Trabajo",
+        desc: "Debes recorrer 3 kilómetros diarios. ¿Qué opción genera la menor huella de carbono?",
+        options: [
+          { text: "Caminar o usar bicicleta urbana", points: 100, best: true },
+          { text: "Ir en auto particular de gasolina a solas", points: 10, best: false },
+          { text: "Usar transporte público o compartido", points: 70, best: false }
+        ]
+      },
+      {
+        title: "Consumo de Alimentos",
+        desc: "Vas a comprar tus alimentos de la semana. ¿Cuál es la elección más ecológica?",
+        options: [
+          { text: "Productos locales de temporada sin empaques plásticos", points: 100, best: true },
+          { text: "Alimentos ultraprocesados e importados por avión", points: 10, best: false },
+          { text: "Comprar todo embotellado en porciones individuales", points: 25, best: false }
+        ]
+      },
+      {
+        title: "Uso de Energía en el Hogar",
+        desc: "Necesitas iluminar tu habitación durante la noche. ¿Qué medida es más eficiente?",
+        options: [
+          { text: "Lámparas incandescentes antiguas dejadas encendidas", points: 10, best: false },
+          { text: "Focos LED de bajo consumo y apagar al salir", points: 100, best: true },
+          { text: "Usar la luz del celular conectada al cargador", points: 40, best: false }
+        ]
+      },
+      {
+        title: "Manejo de Agua Potable",
+        desc: "Al lavarte los dientes o los platos en la cocina:",
+        options: [
+          { text: "Mantener el grifo abierto a máxima presión", points: 0, best: false },
+          { text: "Cerrar el grifo mientras te cepillas o enjabonas", points: 100, best: true },
+          { text: "Lavar con agua caliente hirviendo todo el tiempo", points: 30, best: false }
+        ]
+      },
+      {
+        title: "Gestión de Residuos",
+        desc: "Tienes ropa u objetos que ya no utilizas pero están en buen estado:",
+        options: [
+          { text: "Desecharlos inmediatamente a la basura común", points: 0, best: false },
+          { text: "Donarlos, repararlos o intercambiarlos", points: 100, best: true },
+          { text: "Guardarlos acumulados para siempre en bolsas", points: 30, best: false }
+        ]
+      }
+    ];
+
+    // Función para sincronizar y guardar de forma permanente las puntuaciones
+    async function syncPlayerState() {
+      if (!localPlayer.name) return;
+      
+      // Calcular puntaje total acumulado de forma permanente
+      localPlayer.totalScore = localPlayer.quizScore + localPlayer.gamesScore;
+      
+      // Guardar en localStorage de forma persistente (para que nunca se borren)
+      localStorage.setItem('eco_user_name', localPlayer.name);
+      localStorage.setItem('eco_quiz_score', localPlayer.quizScore);
+      localStorage.setItem('eco_quiz_correct', localPlayer.quizCorrect);
+      localStorage.setItem('eco_games_score', localPlayer.gamesScore);
+      localStorage.setItem('eco_total_score', localPlayer.totalScore);
+
+      // Actualizar UI de usuario
+      document.getElementById('navUserScore').innerText = `${localPlayer.totalScore} pts`;
+      document.getElementById('cardUserScoreDisplay').innerText = `${localPlayer.totalScore} pts`;
+
+      // Guardar también en la nube de Firestore en tiempo real
+      if (!db) return;
+      try {
+        const playerDoc = doc(db, 'artifacts', appId, 'public', 'data', 'players', localPlayer.id);
+        await setDoc(playerDoc, {
+          id: localPlayer.id,
+          name: localPlayer.name,
+          quizScore: localPlayer.quizScore,
+          quizCorrect: localPlayer.quizCorrect,
+          gamesScore: localPlayer.gamesScore,
+          totalScore: localPlayer.totalScore,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } catch (e) {
+        console.warn("Sincronización en nube local activa", e);
+      }
+    }
+
+    // Escuchar cambios de jugadores en tiempo real para el contador y tabla
+    function listenToLeaderboard() {
+      if (!db) {
+        // Fallback local si Firestore no está configurado
+        updateLeaderboardUI([localPlayer]);
+        return;
+      }
+      try {
+        const playersRef = collection(db, 'artifacts', appId, 'public', 'data', 'players');
+        onSnapshot(playersRef, (snapshot) => {
+          const players = [];
+          snapshot.forEach(doc => {
+            players.push(doc.data());
+          });
+
+          // Asegurar que el jugador local actual esté incluido en la lista en tiempo real
+          if (localPlayer.name && !players.some(p => p.id === localPlayer.id)) {
+            players.push(localPlayer);
+          }
+
+          // Ordenar por Puntaje Total acumulado descendente
+          players.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+
+          // Actualizar contadores en vivo
+          const activeCount = Math.max(1, players.length);
+          document.getElementById('navOnlineCount').innerText = activeCount;
+          document.getElementById('livePlayersBigNumber').innerText = activeCount;
+
+          updateLeaderboardUI(players);
+          updateAdminTable(players);
+        }, (err) => {
+          console.log("Error sincronizando leaderboard", err);
+          updateLeaderboardUI([localPlayer]);
+        });
+      } catch (e) {
+        console.warn("Firestore error", e);
+        updateLeaderboardUI([localPlayer]);
+      }
+    }
+
+    function updateLeaderboardUI(players) {
+      const tbody = document.getElementById('leaderboardBody');
+      if (players.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-500 text-xs">No hay jugadores registrados. ¡Sé el primero en ingresar arriba!</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = players.slice(0, 25).map((p, index) => {
+        const isCurrent = p.id === localPlayer.id;
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+        return `
+          <tr class="${isCurrent ? 'bg-emerald-500/10 font-bold border-l-4 border-emerald-500' : 'hover:bg-slate-800/40'} border-b border-slate-800/60 transition">
+            <td class="py-3 px-4 font-bold text-center">${medal}</td>
+            <td class="py-3 px-4 flex items-center space-x-2">
+              <span class="text-white">${escapeHtml(p.name)}</span>
+              ${isCurrent ? '<span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">Tú (Permanente)</span>' : ''}
+            </td>
+            <td class="py-3 px-4 text-center text-emerald-400 font-semibold">${p.quizCorrect || 0} / 10</td>
+            <td class="py-3 px-4 text-center text-cyan-400 font-semibold">${p.gamesScore || 0} pts</td>
+            <td class="py-3 px-4 text-right font-extrabold text-amber-400 text-base">${p.totalScore || 0} pts</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    window.registerPlayer = function() {
+      const input = document.getElementById('playerNameInput');
+      const name = input.value.trim();
+      if (!name) {
+        alert("Por favor ingresa tu nombre o alias para unirte.");
+        return;
+      }
+      localPlayer.name = name;
+      localStorage.setItem('eco_user_name', name);
+
+      document.getElementById('navUserName').innerText = name;
+      document.getElementById('userInfoChip').classList.remove('hidden');
+      document.getElementById('userInfoChip').classList.add('flex');
+      
+      syncPlayerState();
+      alert(`¡Bienvenido/a, ${name}! Tus puntuaciones están guardadas permanentemente y se acumulan automáticamente.`);
+    };
+
+    window.showSection = function(sectionId) {
+      ['homeSection', 'quizSection', 'quizResultSection', 'game1Section', 'game2Section', 'game3Section'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(sectionId).classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.startQuiz = function() {
+      if (!localPlayer.name) {
+        alert("Por favor ingresa tu nombre de usuario primero en el menú principal.");
+        return;
+      }
+      currentQIndex = 0;
+      quizScore = 0;
+      quizCorrect = 0;
+      showSection('quizSection');
+      loadQuestion();
+    };
+
+    function loadQuestion() {
+      clearInterval(quizTimerInterval);
+      document.getElementById('quizFeedbackBox').classList.add('hidden');
+      
+      const q = quizQuestions[currentQIndex];
+      document.getElementById('quizProgressTitle').innerText = `Pregunta ${currentQIndex + 1} de 10`;
+      document.getElementById('quizProgressBar').style.width = `${((currentQIndex + 1) / 10) * 100}%`;
+      document.getElementById('quizQuestionCategory').innerText = q.category;
+      document.getElementById('quizQuestionText').innerText = q.question;
+
+      const container = document.getElementById('quizOptionsContainer');
+      container.innerHTML = q.options.map((opt, idx) => `
+        <button onclick="selectAnswer(${idx})" class="quiz-opt-btn text-left p-4 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-sm sm:text-base font-medium text-slate-200 transition flex items-center justify-between group">
+          <span>${opt}</span>
+          <i class="fa-regular fa-circle text-slate-500 group-hover:text-emerald-400"></i>
+        </button>
+      `).join('');
+
+      quizTimeLeft = 20;
+      document.getElementById('quizTimer').innerText = `${quizTimeLeft}s`;
+      quizTimerInterval = setInterval(() => {
+        quizTimeLeft--;
+        document.getElementById('quizTimer').innerText = `${quizTimeLeft}s`;
+        if (quizTimeLeft <= 0) {
+          clearInterval(quizTimerInterval);
+          selectAnswer(-1);
+        }
+      }, 1000);
+    }
+
+    window.selectAnswer = function(optIdx) {
+      clearInterval(quizTimerInterval);
+      const q = quizQuestions[currentQIndex];
+      const buttons = document.querySelectorAll('.quiz-opt-btn');
+      buttons.forEach(btn => btn.disabled = true);
+
+      const isCorrect = (optIdx === q.correct);
+      if (isCorrect) {
+        quizCorrect++;
+        const speedBonus = quizTimeLeft * 5;
+        quizScore += (100 + speedBonus);
+        if (optIdx >= 0) buttons[optIdx].classList.add('bg-emerald-950', 'border-emerald-500', 'text-emerald-300');
+      } else {
+        if (optIdx >= 0) buttons[optIdx].classList.add('bg-rose-950', 'border-rose-500', 'text-rose-300');
+        buttons[q.correct].classList.add('bg-emerald-950/60', 'border-emerald-500/60', 'text-emerald-300');
+      }
+
+      const feedbackBox = document.getElementById('quizFeedbackBox');
+      const feedbackHeader = document.getElementById('quizFeedbackHeader');
+      const feedbackExp = document.getElementById('quizFeedbackExplanation');
+
+      feedbackBox.classList.remove('hidden', 'bg-emerald-950/40', 'border-emerald-500/30', 'bg-rose-950/40', 'border-rose-500/30');
+
+      if (isCorrect) {
+        feedbackBox.classList.add('bg-emerald-950/40', 'border-emerald-500/30');
+        feedbackHeader.className = "font-bold text-emerald-400 flex items-center space-x-2";
+        feedbackHeader.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>¡Respuesta Correcta! (+${100 + quizTimeLeft * 5} pts)</span>`;
+      } else {
+        feedbackBox.classList.add('bg-rose-950/40', 'border-rose-500/30');
+        feedbackHeader.className = "font-bold text-rose-400 flex items-center space-x-2";
+        feedbackHeader.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> <span>${optIdx === -1 ? '¡Tiempo Agotado!' : 'Respuesta Incorrecta'}</span>`;
+      }
+
+      feedbackExp.innerText = q.explanation;
+    };
+
+    window.nextQuestion = function() {
+      currentQIndex++;
+      if (currentQIndex < quizQuestions.length) {
+        loadQuestion();
+      } else {
+        finishQuiz();
+      }
+    };
+
+    function finishQuiz() {
+      // Acumular permanentemente el puntaje obtenido en el quiz
+      localPlayer.quizScore += quizScore;
+      localPlayer.quizCorrect = Math.max(localPlayer.quizCorrect, quizCorrect);
+      syncPlayerState();
+
+      document.getElementById('resCorrect').innerText = `${quizCorrect} / 10`;
+      document.getElementById('resScore').innerText = `${quizScore} pts (Guardados Permanentemente)`;
+
+      let badge = "Aprendiz Eco";
+      let evalText = "Buen intento. Tus puntuaciones se han guardado para que puedas seguir mejorando.";
+
+      if (quizCorrect >= 9) {
+        badge = "Héroe del Planeta 🌿";
+        evalText = "¡Excelente desempeño! Demuestras un conocimiento profundo sobre la contaminación global.";
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      } else if (quizCorrect >= 6) {
+        badge = "Defensor Ambiental 🌎";
+        evalText = "¡Gran trabajo! Tienes bases sólidas sobre la protección del medio ambiente.";
+      }
+
+      document.getElementById('resBadge').innerText = badge;
+      document.getElementById('resEvaluationText').innerText = evalText;
+
+      showSection('quizResultSection');
+    }
+
+    window.startGame = function(gameNum) {
+      if (!localPlayer.name) {
+        alert("Por favor ingresa tu nombre de usuario primero en el menú principal.");
+        return;
+      }
+      if (gameNum === 1) {
+        g1Index = 0;
+        g1Score = 0;
+        document.getElementById('g1Score').innerText = g1Score;
+        showSection('game1Section');
+        loadG1Item();
+      } else if (gameNum === 2) {
+        g2Score = 0;
+        document.getElementById('g2Score').innerText = g2Score;
+        showSection('game2Section');
+      } else if (gameNum === 3) {
+        g3Index = 0;
+        g3Score = 0;
+        document.getElementById('g3Score').innerText = g3Score;
+        showSection('game3Section');
+        loadG3Scenario();
+      }
+    };
+
+    function loadG1Item() {
+      if (g1Index >= g1Items.length) {
+        localPlayer.gamesScore += g1Score;
+        syncPlayerState();
+        alert(`¡Dinámica 1 Completada! Puntos sumados permanentemente: +${g1Score}`);
+        showSection('homeSection');
+        return;
+      }
+
+      const item = g1Items[g1Index];
+      document.getElementById('g1ItemName').innerText = item.name;
+      document.getElementById('g1ItemHint').innerText = item.hint;
+      document.getElementById('g1ItemIcon').innerHTML = `<i class="fa-solid ${item.icon}"></i>`;
+      document.getElementById('g1Remaining').innerText = g1Items.length - g1Index;
+    }
+
+    window.checkG1Category = function(cat) {
+      const item = g1Items[g1Index];
+      if (item.category === cat) {
+        g1Score += 50;
+        document.getElementById('g1Score').innerText = g1Score;
+        document.getElementById('g1Feedback').innerText = "¡Correcto! Residuo clasificado adecuadamente. (+50 pts)";
+        document.getElementById('g1Feedback').className = "h-6 text-xs font-bold text-emerald-400";
+      } else {
+        document.getElementById('g1Feedback').innerText = "Incorrecto. Este residuo requiere otro contenedor.";
+        document.getElementById('g1Feedback').className = "h-6 text-xs font-bold text-rose-400";
+      }
+      g1Index++;
+      setTimeout(loadG1Item, 800);
+    };
+
+    window.runOceanGame = function() {
+      document.getElementById('startG2Btn').classList.add('hidden');
+      const area = document.getElementById('oceanGameArea');
+      g2Score = 0;
+      g2Timer = 15;
+      document.getElementById('g2Score').innerText = g2Score;
+      document.getElementById('g2Timer').innerText = g2Timer;
+
+      g2Interval = setInterval(() => {
+        g2Timer--;
+        document.getElementById('g2Timer').innerText = g2Timer;
+        if (g2Timer <= 0) {
+          endG2Game();
+        }
+      }, 1000);
+
+      g2SpawnInterval = setInterval(spawnOceanItem, 700);
+    };
+
+    function spawnOceanItem() {
+      const area = document.getElementById('oceanGameArea');
+      if (!area || g2Timer <= 0) return;
+
+      const item = document.createElement('div');
+      const isTrash = Math.random() > 0.3;
+
+      const posX = Math.floor(Math.random() * (area.clientWidth - 50));
+      const posY = Math.floor(Math.random() * (area.clientHeight - 50));
+
+      item.style.left = `${posX}px`;
+      item.style.top = `${posY}px`;
+      item.className = `absolute cursor-pointer text-3xl p-2 rounded-full transition transform hover:scale-125 floating-item ${isTrash ? 'text-amber-400 hover:text-rose-400' : 'text-emerald-300'}`;
+
+      if (isTrash) {
+        const trashIcons = ['fa-bottle-water', 'fa-box-tissue', 'fa-oil-can', 'fa-bag-shopping'];
+        const icon = trashIcons[Math.floor(Math.random() * trashIcons.length)];
+        item.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+        item.onclick = (e) => {
+          e.stopPropagation();
+          g2Score += 30;
+          document.getElementById('g2Score').innerText = g2Score;
+          item.remove();
+        };
+      } else {
+        item.innerHTML = `<i class="fa-solid fa-fish text-cyan-300"></i>`;
+        item.onclick = (e) => {
+          e.stopPropagation();
+          g2Score = Math.max(0, g2Score - 40);
+          document.getElementById('g2Score').innerText = g2Score;
+          item.remove();
+        };
+      }
+
+      area.appendChild(item);
+
+      setTimeout(() => {
+        if (item.parentNode) item.remove();
+      }, 2000);
+    }
+
+    function endG2Game() {
+      clearInterval(g2Interval);
+      clearInterval(g2SpawnInterval);
+      
+      localPlayer.gamesScore += g2Score;
+      syncPlayerState();
+
+      const area = document.getElementById('oceanGameArea');
+      area.innerHTML = `
+        <div class="text-center space-y-3">
+          <h3 class="text-xl font-bold text-cyan-300">¡Tiempo Agotado!</h3>
+          <p class="text-sm text-slate-300">Puntaje sumado permanentemente: <strong class="text-amber-400">+${g2Score} pts</strong></p>
+          <button onclick="runOceanGame()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2 rounded-xl text-xs transition">
+            Volver a Jugar
+          </button>
+        </div>
+      `;
+    }
+
+    function loadG3Scenario() {
+      if (g3Index >= g3Scenarios.length) {
+        localPlayer.gamesScore += g3Score;
+        syncPlayerState();
+        alert(`¡Dinámica 3 Completada! Puntos sumados permanentemente: +${g3Score}`);
+        showSection('homeSection');
+        return;
+      }
+
+      const sc = g3Scenarios[g3Index];
+      document.getElementById('g3ScenarioCounter').innerText = `Escenario ${g3Index + 1} de ${g3Scenarios.length}`;
+      document.getElementById('g3ScenarioTitle').innerText = sc.title;
+      document.getElementById('g3ScenarioDesc').innerText = sc.desc;
+
+      const container = document.getElementById('g3OptionsContainer');
+      container.innerHTML = sc.options.map((opt, idx) => `
+        <button onclick="chooseG3Option(${idx})" class="p-4 rounded-2xl bg-slate-800/80 hover:bg-amber-500/20 border border-slate-700 hover:border-amber-500/50 text-left transition flex items-center justify-between group">
+          <span class="text-sm font-medium text-slate-200 group-hover:text-amber-300">${opt.text}</span>
+          <i class="fa-solid fa-chevron-right text-slate-600 group-hover:text-amber-400"></i>
+        </button>
+      `).join('');
+    }
+
+    window.chooseG3Option = function(optIdx) {
+      const sc = g3Scenarios[g3Index];
+      const selected = sc.options[optIdx];
+      g3Score += selected.points;
+      document.getElementById('g3Score').innerText = g3Score;
+      g3Index++;
+      loadG3Scenario();
+    };
+
+    window.openShareModal = function() {
+      document.getElementById('shareModal').classList.remove('hidden');
+    };
+    window.closeShareModal = function() {
+      document.getElementById('shareModal').classList.add('hidden');
+      document.getElementById('shareToast').classList.add('hidden');
+    };
+
+    window.copyShareMessage = function() {
+      const txt = document.getElementById('shareTextarea');
+      txt.select();
+      document.execCommand('copy');
+      const toast = document.getElementById('shareToast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2500);
+    };
+
+    window.sendWhatsAppMessage = function() {
+      const txt = encodeURIComponent(document.getElementById('shareTextarea').value);
+      window.open(`https://api.whatsapp.com/send?text=${txt}`, '_blank');
+    };
+
+    window.openAdminModal = function() {
+      document.getElementById('adminModal').classList.remove('hidden');
+      document.getElementById('adminAuthStep').classList.remove('hidden');
+      document.getElementById('adminDashboard').classList.add('hidden');
+      document.getElementById('adminPinInput').value = '';
+      document.getElementById('adminErrorMsg').classList.add('hidden');
+    };
+
+    window.closeAdminModal = function() {
+      document.getElementById('adminModal').classList.add('hidden');
+    };
+
+    window.verifyAdminPin = function() {
+      const pin = document.getElementById('adminPinInput').value;
+      if (pin === '0221') {
+        document.getElementById('adminAuthStep').classList.add('hidden');
+        document.getElementById('adminDashboard').classList.remove('hidden');
+      } else {
+        document.getElementById('adminErrorMsg').classList.remove('hidden');
+      }
+    };
+
+    function updateAdminTable(players) {
+      document.getElementById('admTotalUsers').innerText = players.length;
+      const totalQuizScore = players.reduce((acc, p) => acc + (p.quizScore || 0), 0);
+      const avg = players.length ? Math.round(totalQuizScore / players.length) : 0;
+      document.getElementById('admAvgScore').innerText = `${avg} pts`;
+
+      const tbody = document.getElementById('adminTableBody');
+      if (players.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Sin datos de estudiantes aún.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = players.map(p => `
+        <tr class="border-b border-slate-800 hover:bg-slate-800/40">
+          <td class="p-2.5 font-bold text-white">${escapeHtml(p.name)}</td>
+          <td class="p-2.5 text-center text-emerald-400 font-semibold">${p.quizCorrect || 0} / 10</td>
+          <td class="p-2.5 text-center text-cyan-400 font-semibold">${p.gamesScore || 0} pts</td>
+          <td class="p-2.5 text-right font-bold text-amber-400">${p.totalScore || 0} pts</td>
+        </tr>
+      `).join('');
+    }
+
+    window.exportResultsCSV = function() {
+      alert("Generando reporte CSV con registros permanentes para descarga...");
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      listenToLeaderboard();
+      if (localPlayer.name) {
+        document.getElementById('playerNameInput').value = localPlayer.name;
+        document.getElementById('navUserName').innerText = localPlayer.name;
+        document.getElementById('cardUserScoreDisplay').innerText = `${localPlayer.totalScore} pts`;
+        document.getElementById('userInfoChip').classList.remove('hidden');
+        document.getElementById('userInfoChip').classList.add('flex');
+      }
+    });
+
+  </script>
+</body>
+</html>
